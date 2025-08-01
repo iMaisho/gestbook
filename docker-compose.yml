@@ -13,7 +13,7 @@ services:
       # On monte le dossier de configuration local directement dans le conteneur.
       # C'est très pratique en développement pour voir les changements
       # sans avoir à reconstruire l'image du config-server.
-      - ./gestbook-config-repo:/config-repo
+      - ../gestbook-config-repo:/config-repo
     environment:
       # On surcharge l'URI Git pour qu'elle pointe vers le volume monté.
       - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=file:///config-repo
