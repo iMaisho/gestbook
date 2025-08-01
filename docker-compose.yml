@@ -1,0 +1,79 @@
+# Version de la syntaxe Docker Compose
+version: '3.8'
+
+# Définition de tous nos services (conteneurs)
+services:
+
+  # 1. Le Config Server : il doit démarrer en premier
+  config-server:
+    image: config-server:1.0 # L'image que nous avons construite
+    ports:
+      - "8888:8888" # Expose son port sur la machine hôte
+    volumes:
+      # On monte le dossier de configuration local directement dans le conteneur.
+      # C'est très pratique en développement pour voir les changements
+      # sans avoir à reconstruire l'image du config-server.
+      - ./gestbook-config-repo:/config-repo
+    environment:
+      # On surcharge l'URI Git pour qu'elle pointe vers le volume monté.
+      - SPRING_CLOUD_CONFIG_SERVER_GIT_URI=file:///config-repo
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+    healthcheck:
+      # Vérifie que le service est réellement prêt
+      test: [ "CMD", "curl", "-f", "http://localhost:8888/actuator/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # 2. Le Serveur Eureka : il dépend du Config Server pour sa configuration
+  eureka-server:
+    image: eureka-server:1.0
+    ports:
+      - "8761:8761"
+    environment:
+      # On lui dit où trouver le Config Server dans le réseau Docker
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+    depends_on:
+      config-server:
+        condition: service_healthy # Attend que le healthcheck du config-server passe
+
+  # 3. Le Product Service : dépend d'Eureka et du Config Server
+  product-service:
+    image: product-service:1.0
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+    depends_on:
+      eureka-server:
+        condition: service_started # On peut être moins strict ici
+      config-server:
+        condition: service_healthy
+
+  # 4. Le Order Service : idem
+  order-service:
+    image: order-service:1.0
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+    depends_on:
+      product-service: # Il dépend fonctionnellement de product-service
+        condition: service_started
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_healthy
+
+  # 5. L'API Gateway : la porte d'entrée
+  api-gateway:
+    image: api-gateway:1.0
+    ports:
+      - "8080:8080" # Le seul port réellement nécessaire pour l'utilisateur final
+    environment:
+      - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+    depends_on:
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_healthy
