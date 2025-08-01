@@ -1,5 +1,9 @@
+# Le port de la Gateway, c'est le point d'entrée public de notre application.
+# 8080 est un choix standard.
 server:
   port: 8080
+
+# Nom de l'application
 
 spring:
   application:
@@ -9,14 +13,19 @@ spring:
     gateway:
       discovery:
         locator:
-          enabled: true
           lower-case-service-id: true
+          enabled: true
+
       server:
         webmvc:
           routes:
-            # Premi�re route : pour le service produit
             - id: product-service-route
+              # L'URI de destination. 'lb' signifie "Load Balanced".
+              # La Gateway va utiliser Eureka pour trouver une instance
+              # de 'product-service'. Le nom ici est l'ID de l'application
+              # enregistrée dans Eureka.
               uri: lb://product-service
+              # Le prédicat qui déclenche cette route
               predicates:
                 - Path=/api/products/**
 
@@ -25,9 +34,8 @@ spring:
               uri: lb://order-service
               predicates:
                 - Path=/api/orders/**
-
-
 eureka:
   client:
     serviceUrl:
       defaultZone: http://localhost:8761/eureka
+
