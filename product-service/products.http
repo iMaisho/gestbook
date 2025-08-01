@@ -1,0 +1,15 @@
+### Get all products
+GET http://localhost:8081/api/products
+Accept: application/json
+
+###
+POST http://localhost:8081/api/products
+Content-Type: application/json
+
+{
+  "name": "Le Mythe de Sisyphe",
+  "author": "Albert Camus",
+  "isbn": "978-2070322886",
+  "price": 7.60,
+  "stock": 25
+}

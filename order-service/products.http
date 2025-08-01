@@ -1,0 +1,9 @@
+### Crée un order en récupérant le prix d'un product
+POST http://localhost:8082/api/orders
+Content-Type: application/json
+Accept: application/json
+
+{
+  "productId": 1,
+  "quantity": 2
+}
